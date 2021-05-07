@@ -9,14 +9,14 @@ pub struct Timer {
 
 impl Timer{
     
-    fn is_running(&mut self) -> bool{
+    pub fn is_running(&mut self) -> bool{
         self.active_watch.is_running()
     }
-    fn start(&mut self) -> Duration{
+    pub fn start(&mut self) {
         self.active_watch.restart();
-        self.active_watch.elapsed()
+        self.active_watch.elapsed();
     }
-    fn stop(&mut self) -> Duration{
+    pub fn stop(&mut self) -> Duration{
         self.active_watch.stop();
         self.active_watch.elapsed()
     }
@@ -32,14 +32,6 @@ impl Timer{
 pub fn initialize_timer() -> Timer{
     Timer{
         active_watch: Stopwatch::new(),
-    }
-}
-
-pub fn timer_toggle(timer: &mut Timer) -> Duration{
-    if timer.is_running() {
-        timer.stop()
-    } else {
-        timer.start()
     }
 }
 
@@ -82,23 +74,6 @@ impl Record {
         self.get_string(self.size - 1)
     }
 
-    fn format_time_depr(&mut self, s: u64) -> String {
-        let mut seconds: u64 = s.clone();
-        let mut minutes: u64 = 0;
-        let mut hours: u64 = 0;
-
-        if seconds > 60 {
-            minutes = seconds/60;
-            seconds = seconds%60;
-        }
-        
-        if minutes > 60 {
-            hours = minutes/60;
-            minutes = hours%60;
-        }
-
-        format!("{}:{}:{}",hours,minutes,seconds)
-    }
 }
 
 pub fn format_time(s: u64) -> String {
