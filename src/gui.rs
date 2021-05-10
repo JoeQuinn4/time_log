@@ -6,11 +6,15 @@ use crate::time_log_core::{initialize_timer};
 use crate::time_log_core::{Timer,Record};
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
+const HORIZONTAL_WIDGET_SPACING: f64 = 20.0;
 const TEXT_BOX_WIDTH: f64 = 200.0;
 const WINDOW_TITLE: LocalizedString<TimeLogState> = LocalizedString::new("time_log");
 const WINDOW_WIDTH: f64 = 400.0;
 const WINDOW_HEIGHT: f64 = 500.0;
 const LOG_HEIGHT: f64 = WINDOW_HEIGHT * 0.60;
+const TIME_UPDATE_WIDTH: f64 = WINDOW_WIDTH * 0.32;
+const ACTIVE_LABEL_WIDTH: f64 = WINDOW_WIDTH - TIME_UPDATE_WIDTH
+        - 2.0*HORIZONTAL_WIDGET_SPACING;
 
 
 #[derive(Clone, Data, Lens)]
@@ -22,6 +26,7 @@ struct TimeLogState{
     #[data(ignore)]
     record: Record,
     log: String,
+    display_time: String,
 }
 
 pub fn start_gui() {
@@ -32,11 +37,12 @@ pub fn start_gui() {
 
     // create the initial app state
     let initial_state = TimeLogState {
-        live_text: String::from("time_log init"),
+        live_text: String::new(),
         current_proj: String::new(),
         timer: initialize_timer(),
         record: Record::new(),
         log: String::new(),
+        display_time: String::from("00:00:00"),
     };
 
     // start the application
@@ -53,7 +59,7 @@ fn build_root_widget<'a>() -> impl Widget<TimeLogState> {
     // a label that will determine its text based on the current app data.
     let active_label = Label::new(
         |data: &TimeLogState, _env: &Env| 
-            format!("{} - {}", data.current_proj, data.timer.get_time())
+            format!("{} - {}", data.current_proj, data.display_time)
     );
 
     let logged_label = Label::new(
@@ -65,6 +71,11 @@ fn build_root_widget<'a>() -> impl Widget<TimeLogState> {
     let textbox = TextBox::new()
         .fix_width(TEXT_BOX_WIDTH)
         .lens(TimeLogState::live_text);
+
+    let time_update_button = Button::new("update elapsed")
+        .on_click(|_event, _data: &mut TimeLogState, _env| {
+            update_display_time(_data);
+        });
     
     let start_button = Button::new("start")
         .on_click(|_event, _data: &mut TimeLogState, _env| {
@@ -75,21 +86,28 @@ fn build_root_widget<'a>() -> impl Widget<TimeLogState> {
             stop(_data);
         });
 
-    // arrange the two widgets vertically, with some padding
+    // arrange the widgets vertically, with some padding
     let layout = Flex::column()
-        .with_child(active_label)
+        .with_child(Flex::row()
+            .with_child(Align::right(active_label)
+                .fix_width(ACTIVE_LABEL_WIDTH))
+            .with_spacer(HORIZONTAL_WIDGET_SPACING)
+            .with_child(time_update_button
+                .fix_width(TIME_UPDATE_WIDTH))
+            .with_spacer(HORIZONTAL_WIDGET_SPACING)
+        )
         .with_spacer(VERTICAL_WIDGET_SPACING)
         .with_child(Flex::row()
-                        .with_child(textbox)
-                        .with_child(Flex::column()
-                            .with_child(start_button)
-                            .with_child(stop_button)
-                        )
-                )
+            .with_child(textbox)
+            .with_child(Flex::column()
+                .with_child(start_button)
+                .with_child(stop_button)
+            )
+        )
         .with_spacer(VERTICAL_WIDGET_SPACING)
         .with_child(logged_label.fix_height(LOG_HEIGHT));
 
-    // center the two widgets in the available space
+    // center the widgets in the available space
     Align::centered(layout)
 }
 
@@ -116,4 +134,7 @@ fn stop(data: &mut TimeLogState) -> &mut TimeLogState{
     data
 }
 
+fn update_display_time(data: &mut TimeLogState) {
+    data.display_time = data.timer.get_time();
+}
 
